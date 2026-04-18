@@ -1,66 +1,77 @@
-# Email File Processor
+# Email Validator
 
-### Overview
+Django application for uploading CSV files, validating the email addresses they contain, and downloading either the original file or a processed copy with a validation result column.
 
-This repository contains a Django web application designed to upload CSV files containing email addresses, process them for validity, and provide functionality to download processed files. The application is equipped with features to handle file uploads, process the emails for validity, and allow users to download the processed files.
+## What the app does
 
-### Features
+- Accepts CSV uploads through a simple web UI.
+- Stores uploaded files in the Django database and media directory.
+- Validates each value in the `email` column using `py3-validate-email`.
+- Writes a processed CSV named `processed_<original-file-name>`.
+- Lets users download or delete uploaded files from the index page.
 
-- **File Upload**: Users can upload CSV files containing email addresses.
-- **Email Validation**: The application validates each email address in the uploaded file.
-- **File Processing**: After validation, the application generates a processed CSV file with an additional column indicating the validity status of each email.
-- **Download Functionality**: Users can download both the original and processed files.
-- **Error Handling**: The application handles various error scenarios gracefully and provides feedback to users via messages.
+## Stack
 
-### Components
+- Django 3.2
+- SQLite by default
+- Pandas for CSV handling
+- `py3-validate-email` with format, blacklist, DNS, and SMTP checks
 
-- **index.html**: This template renders the main page of the application, allowing users to upload files and displaying the list of uploaded files.
-- **views.py**: Contains Django view functions responsible for handling file upload, processing, deletion, and download operations.
-- **models.py**: Defines the Django model for storing uploaded files.
-- **validate_email.py**: Contains the email validation function using the `validate_email` library.
-- **README.md**: This file provides documentation and instructions for setting up and running the application.
+## Project layout
 
-### Setup and Usage
+- `app/`: Django project configuration
+- `validator/`: upload, process, download, and delete logic
+- `templates/`: server-rendered UI
+- `media/`: runtime output directory for uploaded and processed files
 
-1.  **Clone the Repository**: Clone the repository to your local machine.
+## Input expectations
 
-    `git clone https://github.com/gargmegham/EmailValidator.git`
+- Uploads must be `.csv` files.
+- The CSV is expected to contain a column named `email`.
+- Uploaded filenames must be unique in the database.
+- The model currently limits stored filenames to 20 characters.
 
-2.  **Install Dependencies**: Install the required Python dependencies listed in `requirements.txt`.
+## Setup
 
-    `pip install -r requirements.txt`
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
 
-3.  **Database Setup**: Configure the database settings in `settings.py` according to your database setup. Perform migrations to create necessary database tables.
+Open `http://127.0.0.1:8000/` after the server starts.
 
-    `python manage.py makemigrations python manage.py migrate`
+## How processing works
 
-4.  **Run the Server**: Start the Django development server.
+1. Upload a CSV file from the home page.
+2. Click `Process` for the uploaded file.
+3. The app reads the `email` column, validates each address, and appends a `valid_status` column.
+4. Click `Download` to retrieve the processed CSV.
 
-    `python manage.py runserver`
+## Validation details
 
-5.  **Access the Application**: Visit `http://localhost:8000` in your web browser to access the application.
+The current validator checks:
 
-### Usage Instructions
+- email syntax
+- blacklist status
+- DNS records
+- SMTP reachability
 
-- **File Upload**: Click on the "Choose File" button to select a CSV file containing email addresses. Click on "Upload" to upload the file.
-- **File Processing**: Once uploaded, the application automatically processes the file, validates the email addresses, and generates a processed CSV file.
-- **Download Files**: Users can download both the original and processed files by clicking on the respective download buttons.
-- **Delete Files**: Uploaded files can be deleted by clicking on the delete button next to each file.
+This makes processing more accurate than regex-only validation, but also slower and dependent on external mail infrastructure.
 
-### Contribution Guidelines
+## Limitations
 
-Contributions to the repository are welcome. If you find any issues or would like to add new features, please follow these guidelines:
+- Processing is synchronous and happens in the request cycle.
+- Large uploads are rejected, and there is no background job queue.
+- SMTP-based validation can be slow or inconsistent depending on the target mail server.
+- The app uses `DEBUG = False` in settings, but the secret key is hard-coded and should be moved to environment configuration for real deployments.
 
-- Fork the repository and create a new branch for your feature or bug fix.
-- Ensure that your code follows PEP 8 style guidelines.
-- Submit a pull request with a clear description of the changes you have made.
+## Contributing
 
-[Contribution Guidelines](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
-
-## Contact
-
-For any questions or inquiries, please contact [meghamgarg@gmail.com](mailto:meghamgarg@gmail.com).
+MIT. See [LICENSE](LICENSE).
